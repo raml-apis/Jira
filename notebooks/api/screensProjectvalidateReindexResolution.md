@@ -54,7 +54,7 @@ DOMAIN = prompt("Please, enter your Jira domain. For example, for jira URL 'http
 
 // Read about the Jira API v2 at http://api-portal.anypoint.mulesoft.com/onpositive/api/jira-api-v2
 
-API.createClient('client', '/apiplatform/repository/public/organizations/30/apis/7868/versions/8022/definition', {baseUriParameters: {
+API.createClient('client', '#REF_TAG_DEFENITION', {baseUriParameters: {
 
   domain: DOMAIN,
 
