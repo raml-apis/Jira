@@ -1,57 +1,4251 @@
-#%RAML 0.8
-title: Jira Authorization API
-schemas:
-  - userSession: !include schemas/userSession-schema.json
-  - credentials: !include schemas/credentials-schema.json
-  - credentialsReq: !include schemas/credentialsReq-schema.json
-resourceTypes:
-  - base: !include resourceTypes/base.raml
-/rest/auth/1: 
-  type: base
-  /session: 
-    type: base
-    get: 
-      description: "Returns information about the currently authenticated user's session. If the caller is not authenticated they will get a 401 Unauthorized status code."
-      responses: 
-        200: 
-          body: 
-            application/json: 
-              schema: userSession
-              example: !include examples/userSession-example.json
-        401: 
-          description: Returned if the caller is not authenticated.
-    post: 
-      description: |
-        Creates a new session for a user in JIRA. Once a session has been successfully created it can be used to access any of JIRA's remote APIs and also the web UI by passing the appropriate HTTP Cookie header.
-        Note that it is generally preferrable to use HTTP BASIC authentication with the REST API. However, this resource may be used to mimic the behaviour of JIRA's log-in page (e.g. to display log-in errors to a user).
-      body: 
-        application/json: 
-          schema: credentialsReq
-          example: !include examples/credentialsReq-example.json
-      responses: 
-        200: 
-          body: 
-            application/json: 
-              schema: credentials
-              example: !include examples/credentials-example.json
-        401: 
-          description: Returned if the login fails due to invalid credentials.
-        403: 
-          description: Returned if the login is denied due to a CAPTCHA requirement, throtting, or any other reason. In case of a 403 status code it is possible that the supplied credentials are valid but the user is not allowed to log in at this point in time.
-    delete: 
-      description: Logs the current user out of JIRA, destroying the existing session, if any.
-      responses: 
-        204: 
-          description: Returned if the user was successfully logged out.
-        401: 
-          description: Returned if the caller is not authenticated.
-  /websudo: 
-    type: base
-    delete: 
-      description: This method invalidates the any current WebSudo session.
-      responses: 
-        204: 
-          description: Returned if no error occurs
-documentation: 
-  - title: Headline
-    content: !include docs/authApi/headline.md
+#%RAML 1.0
+title: Jira
+version: 2
+baseUri: http://DefaultParameterValue/rest/api/DefaultParameterValue
+baseUriParameters:
+  protocol:
+    required: false
+    default: DefaultParameterValue
+    displayName: protocol
+    type: string
+  domain:
+    required: false
+    default: DefaultParameterValue
+    displayName: domain
+    type: string
+  version:
+    required: false
+    default: DefaultParameterValue
+    displayName: version
+    type: string
+protocols:
+- HTTP
+securitySchemes:
+  auth:
+    type: Basic Authentication
+types:
+  appProperties:
+    example:
+      value:
+        id: jira.home
+        key: jira.home
+        value: /var/jira/jira-home
+        name: jira.home
+        desc: JIRA home directory
+        type: string
+        defaultValue: ''
+    displayName: appProperties
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      desc:
+        required: false
+        displayName: desc
+        type: string
+      type:
+        required: false
+        displayName: type
+        type: string
+      defaultValue:
+        required: false
+        displayName: defaultValue
+        type: string
+  appPropertyReq:
+    displayName: appPropertyReq
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: string
+  attachment:
+    example:
+      value:
+        self: http://www.example.com/jira/rest/api/2.0/attachments/10000
+        filename: picture.jpg
+        author:
+          self: http://www.example.com/jira/rest/api/2/user?username=fred
+          name: fred
+          avatarUrls:
+            24x24: http://www.example.com/jira/secure/useravatar?size=small&ownerId=fred
+            16x16: http://www.example.com/jira/secure/useravatar?size=xsmall&ownerId=fred
+            32x32: http://www.example.com/jira/secure/useravatar?size=medium&ownerId=fred
+            48x48: http://www.example.com/jira/secure/useravatar?size=large&ownerId=fred
+          displayName: Fred F. User
+          active: false
+        created: 2014-05-27T08:32:06.0000000Z
+        size: 23123
+        mimeType: image/jpeg
+        content: http://www.example.com/jira/attachments/10000
+        thumbnail: http://www.example.com/jira/secure/thumbnail/10000
+    displayName: attachment
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      filename:
+        required: false
+        displayName: filename
+        type: string
+      author:
+        required: false
+        displayName: author
+        type: Author
+      created:
+        required: false
+        displayName: created
+        type: string
+      size:
+        required: false
+        displayName: size
+        type: number
+        format: double
+      mimeType:
+        required: false
+        displayName: mimeType
+        type: string
+      content:
+        required: false
+        displayName: content
+        type: string
+      thumbnail:
+        required: false
+        displayName: thumbnail
+        type: string
+  attachmentMeta:
+    example:
+      value:
+        enabled: true
+        uploadLimit: 1000000
+    displayName: attachmentMeta
+    type: object
+    properties:
+      enabled:
+        required: false
+        displayName: enabled
+        type: boolean
+      uploadLimit:
+        required: false
+        displayName: uploadLimit
+        type: number
+        format: double
+  settings:
+    example:
+      value:
+        enabled: true
+    displayName: settings
+    type: object
+    properties:
+      enabled:
+        required: false
+        displayName: enabled
+        type: boolean
+  cropInstructions:
+    displayName: cropInstructions
+    type: object
+    properties:
+      cropperWidth:
+        required: false
+        displayName: cropperWidth
+        type: number
+        format: double
+      cropperOffsetX:
+        required: false
+        displayName: cropperOffsetX
+        type: number
+        format: double
+      cropperOffsetY:
+        required: false
+        displayName: cropperOffsetY
+        type: number
+        format: double
+      needsCropping:
+        required: false
+        displayName: needsCropping
+        type: boolean
+  systemAvatar:
+    example:
+      value:
+        system:
+        - id: 1000
+          owner: fred
+          isSystemAvatar: true
+          isSelected: true
+          selected: true
+    displayName: systemAvatar
+    type: object
+    properties:
+      system:
+        required: false
+        displayName: system
+        type: array
+        items:
+          type: avatar
+  commentPropertiesKeys:
+    displayName: commentPropertiesKeys
+    type: object
+    properties:
+      keys:
+        required: false
+        displayName: keys
+        type: array
+        items:
+          type: Key
+  commentProperty:
+    displayName: commentProperty
+    type: object
+    properties:
+      key:
+        required: false
+        displayName: key
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: object
+  componentViaPostReq:
+    displayName: componentViaPostReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      leadUserName:
+        required: false
+        displayName: leadUserName
+        type: string
+      assigneeType:
+        required: false
+        displayName: assigneeType
+        type: string
+      isAssigneeTypeValid:
+        required: false
+        displayName: isAssigneeTypeValid
+        type: boolean
+      project:
+        required: false
+        displayName: project
+        type: string
+  componentViaPost:
+    displayName: componentViaPost
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      lead:
+        required: false
+        displayName: lead
+        type: Lead
+      assigneeType:
+        required: false
+        displayName: assigneeType
+        type: string
+      assignee:
+        required: false
+        displayName: assignee
+        type: Assignee5
+      realAssigneeType:
+        required: false
+        displayName: realAssigneeType
+        type: string
+      realAssignee:
+        required: false
+        displayName: realAssignee
+        type: RealAssignee
+      isAssigneeTypeValid:
+        required: false
+        displayName: isAssigneeTypeValid
+        type: boolean
+  componentViaPutReq:
+    displayName: componentViaPutReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      leadUserName:
+        required: false
+        displayName: leadUserName
+        type: string
+      assigneeType:
+        required: false
+        displayName: assigneeType
+        type: string
+      isAssigneeTypeValid:
+        required: false
+        displayName: isAssigneeTypeValid
+        type: boolean
+  issueCountBean:
+    displayName: issueCountBean
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      issueCount:
+        required: false
+        displayName: issueCount
+        type: number
+        format: double
+  customFieldOption:
+    displayName: customFieldOption
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: string
+  dashboards:
+    displayName: dashboards
+    type: object
+    properties:
+      startAt:
+        required: false
+        displayName: startAt
+        type: number
+        format: double
+      maxResults:
+        required: false
+        displayName: maxResults
+        type: number
+        format: double
+      total:
+        required: false
+        displayName: total
+        type: number
+        format: double
+      prev:
+        required: false
+        displayName: prev
+        type: string
+      next:
+        required: false
+        displayName: next
+        type: string
+      dashboards:
+        required: false
+        displayName: dashboards
+        type: array
+        items:
+          type: dashboard
+  dashboard:
+    displayName: dashboard
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+      view:
+        required: false
+        displayName: view
+        type: string
+  fieldReq:
+    displayName: fieldReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      type:
+        required: false
+        displayName: type
+        type: string
+      searcherKey:
+        required: false
+        displayName: searcherKey
+        type: string
+  filterReq:
+    displayName: filterReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      jql:
+        required: false
+        displayName: jql
+        type: string
+      favourite:
+        required: false
+        displayName: favourite
+        type: boolean
+  filter:
+    displayName: filter
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      owner:
+        required: false
+        displayName: owner
+        type: Owner
+      jql:
+        required: false
+        displayName: jql
+        type: string
+      viewUrl:
+        required: false
+        displayName: viewUrl
+        type: string
+      searchUrl:
+        required: false
+        displayName: searchUrl
+        type: string
+      favourite:
+        required: false
+        displayName: favourite
+        type: boolean
+      sharePermissions:
+        required: false
+        displayName: sharePermissions
+        type: object
+      subscriptions:
+        required: false
+        displayName: subscriptions
+        type: Subscriptions
+  scope:
+    displayName: scope
+    type: object
+    properties:
+      scope:
+        required: false
+        displayName: scope
+        type: string
+  group:
+    displayName: group
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+      users:
+        required: false
+        displayName: users
+        type: Users
+      expand:
+        required: false
+        displayName: expand
+        type: string
+  groupsuggestions:
+    displayName: groupsuggestions
+    type: object
+    properties:
+      header:
+        required: false
+        displayName: header
+        type: string
+      total:
+        required: false
+        displayName: total
+        type: number
+        format: double
+      groups:
+        required: false
+        displayName: groups
+        type: array
+        items:
+          type: Group1
+  issueReq:
+    displayName: issueReq
+    type: object
+    properties:
+      update:
+        required: false
+        displayName: update
+        type: Update
+      fields:
+        required: false
+        displayName: fields
+        type: Fields
+  issue:
+    displayName: issue
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+  errorMessages:
+    displayName: errorMessages
+    type: object
+    properties:
+      errorMessages:
+        required: false
+        displayName: errorMessages
+        type: object
+      errors:
+        required: false
+        displayName: errors
+        type: Errors
+  issuesReq:
+    displayName: issuesReq
+    type: object
+    properties:
+      issueUpdates:
+        required: false
+        displayName: issueUpdates
+        type: array
+        items:
+          type: issueReq
+  issues:
+    displayName: issues
+    type: object
+    properties:
+      issues:
+        required: false
+        displayName: issues
+        type: array
+        items:
+          type: issue
+      errors:
+        required: false
+        displayName: errors
+        type: object
+  elementErrors:
+    displayName: elementErrors
+    type: object
+    properties:
+      status:
+        required: false
+        displayName: status
+        type: number
+        format: double
+      elementErrors:
+        required: false
+        displayName: elementErrors
+        type: ElementErrors1
+      failedElementNumber:
+        required: false
+        displayName: failedElementNumber
+        type: number
+        format: double
+  updateIssueReq:
+    displayName: updateIssueReq
+    type: object
+    properties:
+      update:
+        required: false
+        displayName: update
+        type: Update2
+      fields:
+        required: false
+        displayName: fields
+        type: Fields2
+  representationIssue:
+    displayName: representationIssue
+    type: object
+    properties:
+      expand:
+        required: false
+        displayName: expand
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      fields:
+        required: false
+        displayName: fields
+        type: Fields3
+      names:
+        required: false
+        displayName: names
+        type: Names
+      schema:
+        required: false
+        displayName: schema
+        type: object
+  assignee:
+    displayName: assignee
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+  issueComments:
+    displayName: issueComments
+    type: object
+    properties:
+      startAt:
+        required: false
+        displayName: startAt
+        type: number
+        format: double
+      maxResults:
+        required: false
+        displayName: maxResults
+        type: number
+        format: double
+      total:
+        required: false
+        displayName: total
+        type: number
+        format: double
+      comments:
+        required: false
+        displayName: comments
+        type: array
+        items:
+          type: comment
+  commentReq:
+    displayName: commentReq
+    type: object
+    properties:
+      body:
+        required: false
+        displayName: body
+        type: string
+      visibility:
+        required: false
+        displayName: visibility
+        type: Visibility
+  comment:
+    displayName: comment
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      author:
+        required: false
+        displayName: author
+        type: Author2
+      body:
+        required: false
+        displayName: body
+        type: string
+      updateAuthor:
+        required: false
+        displayName: updateAuthor
+        type: UpdateAuthor
+      created:
+        required: false
+        displayName: created
+        type: string
+      updated:
+        required: false
+        displayName: updated
+        type: string
+      visibility:
+        required: false
+        displayName: visibility
+        type: Visibility
+  issueMeta:
+    displayName: issueMeta
+    type: object
+    properties:
+      fields:
+        required: false
+        displayName: fields
+        type: Fields6
+  notification:
+    displayName: notification
+    type: object
+    properties:
+      subject:
+        required: false
+        displayName: subject
+        type: string
+      textBody:
+        required: false
+        displayName: textBody
+        type: string
+      htmlBody:
+        required: false
+        displayName: htmlBody
+        type: string
+      to:
+        required: false
+        displayName: to
+        type: To
+      restrict:
+        required: false
+        displayName: restrict
+        type: Restrict
+  remoteReq:
+    displayName: remoteReq
+    type: object
+    properties:
+      globalId:
+        required: false
+        displayName: globalId
+        type: string
+      application:
+        required: false
+        displayName: application
+        type: Application
+      relationship:
+        required: false
+        displayName: relationship
+        type: string
+      object:
+        required: false
+        displayName: object
+        type: Object
+  remoteIssueLink:
+    displayName: remoteIssueLink
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      self:
+        required: false
+        displayName: self
+        type: string
+  issueLink:
+    displayName: issueLink
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      self:
+        required: false
+        displayName: self
+        type: string
+      globalId:
+        required: false
+        displayName: globalId
+        type: string
+      application:
+        required: false
+        displayName: application
+        type: Application
+      relationship:
+        required: false
+        displayName: relationship
+        type: string
+      object:
+        required: false
+        displayName: object
+        type: Object
+  transitions:
+    displayName: transitions
+    type: object
+    properties:
+      expand:
+        required: false
+        displayName: expand
+        type: string
+      transitions:
+        required: false
+        displayName: transitions
+        type: array
+        items:
+          type: Transitions1
+  transitionReq:
+    displayName: transitionReq
+    type: object
+    properties:
+      update:
+        required: false
+        displayName: update
+        type: Update3
+      fields:
+        required: false
+        displayName: fields
+        type: Fields8
+      transition:
+        required: false
+        displayName: transition
+        type: Transition
+  voters:
+    displayName: voters
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      votes:
+        required: false
+        displayName: votes
+        type: number
+        format: double
+      hasVoted:
+        required: false
+        displayName: hasVoted
+        type: boolean
+      voters:
+        required: false
+        displayName: voters
+        type: array
+        items:
+          type: Voters1
+  watchers:
+    displayName: watchers
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      isWatching:
+        required: false
+        displayName: isWatching
+        type: boolean
+      watchCount:
+        required: false
+        displayName: watchCount
+        type: number
+        format: double
+      watchers:
+        required: false
+        displayName: watchers
+        type: array
+        items:
+          type: Watchers1
+  worklogs:
+    displayName: worklogs
+    type: object
+    properties:
+      startAt:
+        required: false
+        displayName: startAt
+        type: number
+        format: double
+      maxResults:
+        required: false
+        displayName: maxResults
+        type: number
+        format: double
+      total:
+        required: false
+        displayName: total
+        type: number
+        format: double
+      worklogs:
+        required: false
+        displayName: worklogs
+        type: array
+        items:
+          type: worklog
+  worklog:
+    displayName: worklog
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      author:
+        required: false
+        displayName: author
+        type: Author2
+      updateAuthor:
+        required: false
+        displayName: updateAuthor
+        type: UpdateAuthor
+      comment:
+        required: false
+        displayName: comment
+        type: string
+      visibility:
+        required: false
+        displayName: visibility
+        type: Visibility
+      started:
+        required: false
+        displayName: started
+        type: string
+      timeSpent:
+        required: false
+        displayName: timeSpent
+        type: string
+      timeSpentSeconds:
+        required: false
+        displayName: timeSpentSeconds
+        type: number
+        format: double
+      id:
+        required: false
+        displayName: id
+        type: string
+  issueProjects:
+    displayName: issueProjects
+    type: object
+    properties:
+      expand:
+        required: false
+        displayName: expand
+        type: string
+      projects:
+        required: false
+        displayName: projects
+        type: array
+        items:
+          type: Project3
+  issueLinkReq:
+    displayName: issueLinkReq
+    type: object
+    properties:
+      type:
+        required: false
+        displayName: type
+        type: assignee
+      inwardIssue:
+        required: false
+        displayName: inwardIssue
+        type: InwardIssue
+      outwardIssue:
+        required: false
+        displayName: outwardIssue
+        type: OutwardIssue2
+      comment:
+        required: false
+        displayName: comment
+        type: commentReq
+  link:
+    displayName: link
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      type:
+        required: false
+        displayName: type
+        type: issueLinkType
+      inwardIssue:
+        required: false
+        displayName: inwardIssue
+        type: InwardIssue1
+      outwardIssue:
+        required: false
+        displayName: outwardIssue
+        type: OutwardIssue
+  issueLinkTypes:
+    displayName: issueLinkTypes
+    type: object
+    properties:
+      issueLinkTypes:
+        required: false
+        displayName: issueLinkTypes
+        type: array
+        items:
+          type: issueLinkType
+  issueLinkTypesReq:
+    displayName: issueLinkTypesReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      inward:
+        required: false
+        displayName: inward
+        type: string
+      outward:
+        required: false
+        displayName: outward
+        type: string
+  issueLinkType:
+    displayName: issueLinkType
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      inward:
+        required: false
+        displayName: inward
+        type: string
+      outward:
+        required: false
+        displayName: outward
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+  issueType:
+    displayName: issueType
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      subtask:
+        required: false
+        displayName: subtask
+        type: boolean
+  autoCompleteData:
+    displayName: autoCompleteData
+    type: object
+    properties:
+      visibleFieldNames:
+        required: false
+        displayName: visibleFieldNames
+        type: array
+        items:
+          type: VisibleFieldName
+      visibleFunctionNames:
+        required: false
+        displayName: visibleFunctionNames
+        type: array
+        items:
+          type: VisibleFunctionName
+      jqlReservedWords:
+        required: false
+        displayName: jqlReservedWords
+        type: array
+        items:
+          type: string
+  permission:
+    displayName: permission
+    type: object
+    properties:
+      permissions:
+        required: false
+        displayName: permissions
+        type: Permissions
+  user:
+    displayName: user
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      emailAddress:
+        required: false
+        displayName: emailAddress
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+      timeZone:
+        required: false
+        displayName: timeZone
+        type: string
+      groups:
+        required: false
+        displayName: groups
+        type: Groups
+      expand:
+        required: false
+        displayName: expand
+        type: string
+  userPutReq:
+    displayName: userPutReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      emailAddress:
+        required: false
+        displayName: emailAddress
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+  userPutRes:
+    displayName: userPutRes
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      emailAddress:
+        required: false
+        displayName: emailAddress
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+  issuePriority:
+    displayName: issuePriority
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      statusColor:
+        required: false
+        displayName: statusColor
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  projectRepresentation:
+    displayName: projectRepresentation
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      lead:
+        required: false
+        displayName: lead
+        type: Lead
+      components:
+        required: false
+        displayName: components
+        type: array
+        items:
+          type: componentViaPost
+      issueTypes:
+        required: false
+        displayName: issueTypes
+        type: array
+        items:
+          type: issueType
+      url:
+        required: false
+        displayName: url
+        type: string
+      email:
+        required: false
+        displayName: email
+        type: string
+      assigneeType:
+        required: false
+        displayName: assigneeType
+        type: string
+      versions:
+        required: false
+        displayName: versions
+        type: object
+      name:
+        required: false
+        displayName: name
+        type: string
+      roles:
+        required: false
+        displayName: roles
+        type: Roles
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+  avatar:
+    displayName: avatar
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      owner:
+        required: false
+        displayName: owner
+        type: string
+      isSystemAvatar:
+        required: false
+        displayName: isSystemAvatar
+        type: boolean
+      isSelected:
+        required: false
+        displayName: isSelected
+        type: boolean
+      selected:
+        required: false
+        displayName: selected
+        type: boolean
+  temporaryAvatar:
+    example:
+      value:
+        cropperWidth: 120
+        cropperOffsetX: 50
+        cropperOffsetY: 50
+        url: http://example.com/jira/secure/temporaryavatar?cropped=true
+        needsCropping: true
+    displayName: temporaryAvatar
+    type: object
+    properties:
+      cropperWidth:
+        required: false
+        displayName: cropperWidth
+        type: number
+        format: double
+      cropperOffsetX:
+        required: false
+        displayName: cropperOffsetX
+        type: number
+        format: double
+      cropperOffsetY:
+        required: false
+        displayName: cropperOffsetY
+        type: number
+        format: double
+      url:
+        required: false
+        displayName: url
+        type: string
+      needsCropping:
+        required: false
+        displayName: needsCropping
+        type: boolean
+  avatars:
+    displayName: avatars
+    type: object
+    properties:
+      system:
+        required: false
+        displayName: system
+        type: array
+        items:
+          type: avatar
+      custom:
+        required: false
+        displayName: custom
+        type: array
+        items:
+          type: avatar
+  role:
+    displayName: role
+    type: object
+    properties:
+      Users:
+        required: false
+        displayName: Users
+        type: string
+      Administrators:
+        required: false
+        displayName: Administrators
+        type: string
+      Developers:
+        required: false
+        displayName: Developers
+        type: string
+  addActor:
+    displayName: addActor
+    type: object
+    properties:
+      group:
+        required: false
+        displayName: group
+        type: array
+        items:
+          type: string
+  actor:
+    displayName: actor
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      description:
+        required: false
+        displayName: description
+        type: string
+      actors:
+        required: false
+        displayName: actors
+        type: array
+        items:
+          type: Actor1
+  errorCollection:
+    displayName: errorCollection
+    type: object
+    properties:
+      errorMessages:
+        required: false
+        displayName: errorMessages
+        type: object
+      errors:
+        required: false
+        displayName: errors
+        type: Errors1
+  reindex:
+    displayName: reindex
+    type: object
+    properties:
+      progressUrl:
+        required: false
+        displayName: progressUrl
+        type: string
+      currentProgress:
+        required: false
+        displayName: currentProgress
+        type: number
+        format: double
+      type:
+        required: false
+        displayName: type
+        type: string
+      submittedTime:
+        required: false
+        displayName: submittedTime
+        type: string
+      startTime:
+        required: false
+        displayName: startTime
+        type: string
+      finishTime:
+        required: false
+        displayName: finishTime
+        type: string
+      success:
+        required: false
+        displayName: success
+        type: boolean
+  resolution:
+    displayName: resolution
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  tab:
+    displayName: tab
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      name:
+        required: false
+        displayName: name
+        type: string
+  tabFields:
+    displayName: tabFields
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  searchResults:
+    displayName: searchResults
+    type: object
+    properties:
+      expand:
+        required: false
+        displayName: expand
+        type: string
+      startAt:
+        required: false
+        displayName: startAt
+        type: number
+        format: double
+      maxResults:
+        required: false
+        displayName: maxResults
+        type: number
+        format: double
+      total:
+        required: false
+        displayName: total
+        type: number
+        format: double
+      issues:
+        required: false
+        displayName: issues
+        type: array
+        items:
+          type: Issues2
+  searchRequest:
+    displayName: searchRequest
+    type: object
+    properties:
+      jql:
+        required: false
+        displayName: jql
+        type: string
+      startAt:
+        required: false
+        displayName: startAt
+        type: number
+        format: double
+      maxResults:
+        required: false
+        displayName: maxResults
+        type: number
+        format: double
+      fields:
+        required: false
+        displayName: fields
+        type: array
+        items:
+          type: string
+  securitylevel:
+    displayName: securitylevel
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  serverInfo:
+    displayName: serverInfo
+    type: object
+    properties:
+      baseUrl:
+        required: false
+        displayName: baseUrl
+        type: string
+      version:
+        required: false
+        displayName: version
+        type: string
+      versionNumbers:
+        required: false
+        displayName: versionNumbers
+        type: array
+        items:
+          type: number
+          format: double
+      buildNumber:
+        required: false
+        displayName: buildNumber
+        type: number
+        format: double
+      buildDate:
+        required: false
+        displayName: buildDate
+        type: string
+      serverTime:
+        required: false
+        displayName: serverTime
+        type: string
+      scmInfo:
+        required: false
+        displayName: scmInfo
+        type: string
+      buildPartnerName:
+        required: false
+        displayName: buildPartnerName
+        type: string
+      serverTitle:
+        required: false
+        displayName: serverTitle
+        type: string
+  issueStatus:
+    displayName: issueStatus
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      statusCategory:
+        required: false
+        displayName: statusCategory
+        type: statusCategory
+  statusCategory:
+    displayName: statusCategory
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      key:
+        required: false
+        displayName: key
+        type: string
+      colorName:
+        required: false
+        displayName: colorName
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  userPostReq:
+    displayName: userPostReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      password:
+        required: false
+        displayName: password
+        type: string
+      emailAddress:
+        required: false
+        displayName: emailAddress
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+  password:
+    displayName: password
+    type: object
+    properties:
+      password:
+        required: false
+        displayName: password
+        type: string
+  usersList:
+    displayName: usersList
+    type: object
+    properties:
+      users:
+        required: false
+        displayName: users
+        type: array
+        items:
+          type: Users3
+      total:
+        required: false
+        displayName: total
+        type: number
+        format: double
+      header:
+        required: false
+        displayName: header
+        type: string
+  versionReq:
+    displayName: versionReq
+    type: object
+    properties:
+      description:
+        required: false
+        displayName: description
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      archived:
+        required: false
+        displayName: archived
+        type: boolean
+      released:
+        required: false
+        displayName: released
+        type: boolean
+      releaseDate:
+        required: false
+        displayName: releaseDate
+        type: string
+      userReleaseDate:
+        required: false
+        displayName: userReleaseDate
+        type: string
+      project:
+        required: false
+        displayName: project
+        type: string
+      projectId:
+        required: false
+        displayName: projectId
+        type: number
+        format: double
+  positionReq:
+    displayName: positionReq
+    type: object
+    properties:
+      after:
+        required: false
+        displayName: after
+        type: string
+  version:
+    displayName: version
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      archived:
+        required: false
+        displayName: archived
+        type: boolean
+      released:
+        required: false
+        displayName: released
+        type: boolean
+      releaseDate:
+        required: false
+        displayName: releaseDate
+        type: string
+      overdue:
+        required: false
+        displayName: overdue
+        type: boolean
+      userReleaseDate:
+        required: false
+        displayName: userReleaseDate
+        type: string
+      projectId:
+        required: false
+        displayName: projectId
+        type: number
+        format: double
+  issuesUnresolvedCount:
+    displayName: issuesUnresolvedCount
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      issuesUnresolvedCount:
+        required: false
+        displayName: issuesUnresolvedCount
+        type: number
+        format: double
+  remoteVersionLinks:
+    displayName: remoteVersionLinks
+    type: object
+    properties:
+      links:
+        required: false
+        displayName: links
+        type: array
+        items:
+          type: remoteVersionLink
+  remoteVersionLinksReq:
+    displayName: remoteVersionLinksReq
+    type: object
+    properties:
+      globalId:
+        required: false
+        displayName: globalId
+        type: string
+      myCustomLinkProperty:
+        required: false
+        displayName: myCustomLinkProperty
+        type: boolean
+      colors:
+        required: false
+        displayName: colors
+        type: array
+        items:
+          type: string
+      notes:
+        required: false
+        displayName: notes
+        type: array
+        items:
+          type: string
+  transitionProperties:
+    displayName: transitionProperties
+    type: object
+    properties:
+      key:
+        required: false
+        displayName: key
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+  transitionPropertyReq:
+    displayName: transitionPropertyReq
+    type: object
+    properties:
+      value:
+        required: false
+        displayName: value
+        type: string
+  workflowschemeReq:
+    displayName: workflowschemeReq
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      defaultWorkflow:
+        required: false
+        displayName: defaultWorkflow
+        type: string
+      issueTypeMappings:
+        required: false
+        displayName: issueTypeMappings
+        type: IssueTypeMappings
+  workflowscheme:
+    displayName: workflowscheme
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      defaultWorkflow:
+        required: false
+        displayName: defaultWorkflow
+        type: string
+      issueTypeMappings:
+        required: false
+        displayName: issueTypeMappings
+        type: IssueTypeMappings1
+      draft:
+        required: false
+        displayName: draft
+        type: boolean
+      self:
+        required: false
+        displayName: self
+        type: string
+  workflowschemePutReq:
+    displayName: workflowschemePutReq
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      defaultWorkflow:
+        required: false
+        displayName: defaultWorkflow
+        type: string
+      issueTypeMappings:
+        required: false
+        displayName: issueTypeMappings
+        type: IssueTypeMappings
+      updateDraftIfNeeded:
+        required: false
+        displayName: updateDraftIfNeeded
+        type: boolean
+  draft:
+    displayName: draft
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      defaultWorkflow:
+        required: false
+        displayName: defaultWorkflow
+        type: string
+      issueTypeMappings:
+        required: false
+        displayName: issueTypeMappings
+        type: IssueTypeMappings1
+      originalDefaultWorkflow:
+        required: false
+        displayName: originalDefaultWorkflow
+        type: string
+      originalIssueTypeMappings:
+        required: false
+        displayName: originalIssueTypeMappings
+        type: OriginalIssueTypeMappings
+      draft:
+        required: false
+        displayName: draft
+        type: boolean
+      lastModifiedUser:
+        required: false
+        displayName: lastModifiedUser
+        type: LastModifiedUser
+      lastModified:
+        required: false
+        displayName: lastModified
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+  workflowName:
+    displayName: workflowName
+    type: object
+    properties:
+      workflow:
+        required: false
+        displayName: workflow
+        type: string
+  workflowNameReq:
+    displayName: workflowNameReq
+    type: object
+    properties:
+      workflow:
+        required: false
+        displayName: workflow
+        type: string
+      updateDraftIfNeeded:
+        required: false
+        displayName: updateDraftIfNeeded
+        type: boolean
+  workflowIssueTypeReq:
+    displayName: workflowIssueTypeReq
+    type: object
+    properties:
+      issueType:
+        required: false
+        displayName: issueType
+        type: string
+      workflow:
+        required: false
+        displayName: workflow
+        type: string
+      updateDraftIfNeeded:
+        required: false
+        displayName: updateDraftIfNeeded
+        type: boolean
+  workflowIssueType:
+    displayName: workflowIssueType
+    type: object
+    properties:
+      issueType:
+        required: false
+        displayName: issueType
+        type: string
+      workflow:
+        required: false
+        displayName: workflow
+        type: string
+  workflowMappings:
+    displayName: workflowMappings
+    type: object
+    properties:
+      workflow:
+        required: false
+        displayName: workflow
+        type: string
+      issueTypes:
+        required: false
+        displayName: issueTypes
+        type: array
+        items:
+          type: string
+      defaultMapping:
+        required: false
+        displayName: defaultMapping
+        type: boolean
+  workflowMappingsReq:
+    displayName: workflowMappingsReq
+    type: object
+    properties:
+      workflow:
+        required: false
+        displayName: workflow
+        type: string
+      issueTypes:
+        required: false
+        displayName: issueTypes
+        type: array
+        items:
+          type: string
+      updateDraftIfNeeded:
+        required: false
+        displayName: updateDraftIfNeeded
+        type: boolean
+  credentialsReq:
+    displayName: credentialsReq
+    type: object
+    properties:
+      username:
+        required: false
+        displayName: username
+        type: string
+      password:
+        required: false
+        displayName: password
+        type: string
+  credentials:
+    displayName: credentials
+    type: object
+    properties:
+      session:
+        required: false
+        displayName: session
+        type: Session
+      loginInfo:
+        required: false
+        displayName: loginInfo
+        type: LoginInfo
+  userSession:
+    displayName: userSession
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      loginInfo:
+        required: false
+        displayName: loginInfo
+        type: LoginInfo
+  remoteVersionLink:
+    displayName: remoteVersionLink
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      link:
+        required: false
+        displayName: link
+        type: Link2
+  remoteVersionLinkReq:
+    displayName: remoteVersionLinkReq
+    type: object
+    properties:
+      globalId:
+        required: false
+        displayName: globalId
+        type: string
+      myCustomLinkProperty:
+        required: false
+        displayName: myCustomLinkProperty
+        type: boolean
+      colors:
+        required: false
+        displayName: colors
+        type: array
+        items:
+          type: string
+      notes:
+        required: false
+        displayName: notes
+        type: array
+        items:
+          type: string
+  avatarTemporary:
+    displayName: avatarTemporary
+    type: object
+    properties:
+      cropperWidth:
+        required: false
+        displayName: cropperWidth
+        type: number
+        format: double
+      cropperOffsetX:
+        required: false
+        displayName: cropperOffsetX
+        type: number
+        format: double
+      cropperOffsetY:
+        required: false
+        displayName: cropperOffsetY
+        type: number
+        format: double
+      url:
+        required: false
+        displayName: url
+        type: string
+      needsCropping:
+        required: false
+        displayName: needsCropping
+        type: boolean
+  Actor1:
+    displayName: Actor1
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: number
+        format: double
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      type:
+        required: false
+        displayName: type
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  Add:
+    displayName: Add
+    type: object
+    properties:
+      started:
+        required: false
+        displayName: started
+        type: string
+      timeSpent:
+        required: false
+        displayName: timeSpent
+        type: string
+  Add2:
+    displayName: Add2
+    type: object
+    properties:
+      body:
+        required: false
+        displayName: body
+        type: string
+  Application:
+    displayName: Application
+    type: object
+    properties:
+      type:
+        required: false
+        displayName: type
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  Assignee5:
+    displayName: Assignee5
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Author:
+    displayName: Author
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Author2:
+    displayName: Author2
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  AvatarUrls:
+    displayName: AvatarUrls
+    type: object
+    properties:
+      24x24:
+        required: false
+        displayName: 24x24
+        type: string
+      16x16:
+        required: false
+        displayName: 16x16
+        type: string
+      32x32:
+        required: false
+        displayName: 32x32
+        type: string
+      48x48:
+        required: false
+        displayName: 48x48
+        type: string
+  Comment3:
+    displayName: Comment3
+    type: object
+    properties:
+      add:
+        required: false
+        displayName: add
+        type: Add2
+  Component:
+    displayName: Component
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Component2:
+    displayName: Component2
+    type: object
+    properties:
+      set:
+        required: false
+        displayName: set
+        type: string
+  Edit:
+    displayName: Edit
+    type: object
+    properties:
+      originalEstimate:
+        required: false
+        displayName: originalEstimate
+        type: string
+      remainingEstimate:
+        required: false
+        displayName: remainingEstimate
+        type: string
+  EDITISSUE:
+    displayName: EDITISSUE
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      havePermission:
+        required: false
+        displayName: havePermission
+        type: boolean
+  ElementErrors1:
+    displayName: ElementErrors1
+    type: object
+    properties:
+      errorMessages:
+        required: false
+        displayName: errorMessages
+        type: array
+        items:
+          type: string
+      errors:
+        required: false
+        displayName: errors
+        type: object
+  Errors:
+    displayName: Errors
+    type: object
+    properties:
+      title:
+        required: false
+        displayName: title
+        type: string
+  Errors1:
+    displayName: Errors1
+    type: object
+    properties:
+      projectKey:
+        required: false
+        displayName: projectKey
+        type: string
+  Fields:
+    displayName: Fields
+    type: object
+    properties:
+      project:
+        required: false
+        displayName: project
+        type: Project
+      summary:
+        required: false
+        displayName: summary
+        type: string
+      issuetype:
+        required: false
+        displayName: issuetype
+        type: Issuetype1
+      assignee:
+        required: false
+        displayName: assignee
+        type: assignee
+      reporter:
+        required: false
+        displayName: reporter
+        type: assignee
+      priority:
+        required: false
+        displayName: priority
+        type: Priority
+      labels:
+        required: false
+        displayName: labels
+        type: array
+        items:
+          type: string
+      timetracking:
+        required: false
+        displayName: timetracking
+        type: Timetracking
+      security:
+        required: false
+        displayName: security
+        type: Security
+      versions:
+        required: false
+        displayName: versions
+        type: array
+        items:
+          type: Version1
+      environment:
+        required: false
+        displayName: environment
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      duedate:
+        required: false
+        displayName: duedate
+        type: string
+      fixVersions:
+        required: false
+        displayName: fixVersions
+        type: array
+        items:
+          type: FixVersion
+      components:
+        required: false
+        displayName: components
+        type: array
+        items:
+          type: Component
+      customfield_60000:
+        required: false
+        displayName: customfield_60000
+        type: string
+      customfield_20000:
+        required: false
+        displayName: customfield_20000
+        type: string
+      customfield_80000:
+        required: false
+        displayName: customfield_80000
+        type: transitionPropertyReq
+      customfield_40000:
+        required: false
+        displayName: customfield_40000
+        type: string
+      customfield_30000:
+        required: false
+        displayName: customfield_30000
+        type: array
+        items:
+          type: string
+      customfield_70000:
+        required: false
+        displayName: customfield_70000
+        type: array
+        items:
+          type: string
+      customfield_50000:
+        required: false
+        displayName: customfield_50000
+        type: string
+      customfield_10000:
+        required: false
+        displayName: customfield_10000
+        type: string
+  Fields2:
+    displayName: Fields2
+    type: object
+    properties:
+      summary:
+        required: false
+        displayName: summary
+        type: string
+      customfield_10010:
+        required: false
+        displayName: customfield_10010
+        type: number
+        format: double
+      customfield_10000:
+        required: false
+        displayName: customfield_10000
+        type: string
+  Fields3:
+    displayName: Fields3
+    type: object
+    properties:
+      sub-tasks:
+        required: false
+        displayName: sub-tasks
+        type: array
+        items:
+          type: SubTask
+      timetracking:
+        required: false
+        displayName: timetracking
+        type: Timetracking3
+      project:
+        required: false
+        displayName: project
+        type: Project2
+      updated:
+        required: false
+        displayName: updated
+        type: number
+        format: double
+      description:
+        required: false
+        displayName: description
+        type: string
+      issuelinks:
+        required: false
+        displayName: issuelinks
+        type: array
+        items:
+          type: Issuelink2
+      attachment:
+        required: false
+        displayName: attachment
+        type: array
+        items:
+          type: attachment
+      watcher:
+        required: false
+        displayName: watcher
+        type: Watcher
+      comment:
+        required: false
+        displayName: comment
+        type: array
+        items:
+          type: comment
+      worklog:
+        required: false
+        displayName: worklog
+        type: array
+        items:
+          type: worklog
+  Fields4:
+    displayName: Fields4
+    type: object
+    properties:
+      status:
+        required: false
+        displayName: status
+        type: Status
+  Fields6:
+    displayName: Fields6
+    type: object
+    properties:
+      summary:
+        required: false
+        displayName: summary
+        type: Summary1
+  Fields8:
+    displayName: Fields8
+    type: object
+    properties:
+      assignee:
+        required: false
+        displayName: assignee
+        type: assignee
+      resolution:
+        required: false
+        displayName: resolution
+        type: assignee
+  Fields9:
+    displayName: Fields9
+    type: object
+    properties:
+      issuetype:
+        required: false
+        displayName: issuetype
+        type: Issuetype3
+  FixVersion:
+    displayName: FixVersion
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Group1:
+    displayName: Group1
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      html:
+        required: false
+        displayName: html
+        type: string
+  Group2:
+    displayName: Group2
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+  Groups:
+    displayName: Groups
+    type: object
+    properties:
+      size:
+        required: false
+        displayName: size
+        type: number
+        format: double
+      items:
+        required: false
+        displayName: items
+        type: array
+        items:
+          type: Item1
+  Groups1:
+    displayName: Groups1
+    type: object
+    properties:
+      size:
+        required: false
+        displayName: size
+        type: number
+        format: double
+      items:
+        required: false
+        displayName: items
+        type: object
+  Icon:
+    displayName: Icon
+    type: object
+    properties:
+      url16x16:
+        required: false
+        displayName: url16x16
+        type: string
+      title:
+        required: false
+        displayName: title
+        type: string
+  Icon1:
+    displayName: Icon1
+    type: object
+    properties:
+      url16x16:
+        required: false
+        displayName: url16x16
+        type: string
+      title:
+        required: false
+        displayName: title
+        type: string
+      link:
+        required: false
+        displayName: link
+        type: string
+  InwardIssue:
+    displayName: InwardIssue
+    type: object
+    properties:
+      key:
+        required: false
+        displayName: key
+        type: string
+  InwardIssue1:
+    displayName: InwardIssue1
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+      fields:
+        required: false
+        displayName: fields
+        type: Fields4
+  Issuelink2:
+    displayName: Issuelink2
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      type:
+        required: false
+        displayName: type
+        type: Type
+      outwardIssue:
+        required: false
+        displayName: outwardIssue
+        type: OutwardIssue
+  Issues2:
+    displayName: Issues2
+    type: object
+    properties:
+      expand:
+        required: false
+        displayName: expand
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+  Issuetype1:
+    displayName: Issuetype1
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Issuetype2:
+    displayName: Issuetype2
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      subtask:
+        required: false
+        displayName: subtask
+        type: boolean
+      fields:
+        required: false
+        displayName: fields
+        type: Fields9
+  Issuetype3:
+    displayName: Issuetype3
+    type: object
+    properties:
+      required:
+        required: false
+        displayName: required
+        type: boolean
+      name:
+        required: false
+        displayName: name
+        type: string
+      hasDefaultValue:
+        required: false
+        displayName: hasDefaultValue
+        type: boolean
+      operations:
+        required: false
+        displayName: operations
+        type: array
+        items:
+          type: string
+  IssueTypeMappings:
+    displayName: IssueTypeMappings
+    type: object
+    properties:
+      IsueTypeId:
+        required: false
+        displayName: IsueTypeId
+        type: string
+  IssueTypeMappings1:
+    displayName: IssueTypeMappings1
+    type: object
+    properties:
+      IsueTypeId2:
+        required: false
+        displayName: IsueTypeId2
+        type: string
+      IsueTypeId:
+        required: false
+        displayName: IsueTypeId
+        type: string
+  Item:
+    displayName: Item
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Item1:
+    displayName: Item1
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+  Key:
+    displayName: Key
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+  Label:
+    displayName: Label
+    type: object
+    properties:
+      add:
+        required: false
+        displayName: add
+        type: string
+  LastModifiedUser:
+    displayName: LastModifiedUser
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      emailAddress:
+        required: false
+        displayName: emailAddress
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+      timeZone:
+        required: false
+        displayName: timeZone
+        type: string
+      groups:
+        required: false
+        displayName: groups
+        type: Groups1
+  Lead:
+    displayName: Lead
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Link2:
+    displayName: Link2
+    type: object
+    properties:
+      globalId:
+        required: false
+        displayName: globalId
+        type: string
+      myCustomLinkProperty:
+        required: false
+        displayName: myCustomLinkProperty
+        type: boolean
+      colors:
+        required: false
+        displayName: colors
+        type: array
+        items:
+          type: string
+  LoginInfo:
+    displayName: LoginInfo
+    type: object
+    properties:
+      failedLoginCount:
+        required: false
+        displayName: failedLoginCount
+        type: number
+        format: double
+      loginCount:
+        required: false
+        displayName: loginCount
+        type: number
+        format: double
+      lastFailedLoginTime:
+        required: false
+        displayName: lastFailedLoginTime
+        type: string
+      previousLoginTime:
+        required: false
+        displayName: previousLoginTime
+        type: string
+  Names:
+    displayName: Names
+    type: object
+    properties:
+      sub-tasks:
+        required: false
+        displayName: sub-tasks
+        type: string
+      timetracking:
+        required: false
+        displayName: timetracking
+        type: string
+      project:
+        required: false
+        displayName: project
+        type: string
+      updated:
+        required: false
+        displayName: updated
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      issuelinks:
+        required: false
+        displayName: issuelinks
+        type: string
+      attachment:
+        required: false
+        displayName: attachment
+        type: string
+      watcher:
+        required: false
+        displayName: watcher
+        type: string
+      comment:
+        required: false
+        displayName: comment
+        type: string
+      worklog:
+        required: false
+        displayName: worklog
+        type: string
+  Object:
+    displayName: Object
+    type: object
+    properties:
+      url:
+        required: false
+        displayName: url
+        type: string
+      title:
+        required: false
+        displayName: title
+        type: string
+      summary:
+        required: false
+        displayName: summary
+        type: string
+      icon:
+        required: false
+        displayName: icon
+        type: Icon
+      status:
+        required: false
+        displayName: status
+        type: Status2
+  OriginalIssueTypeMappings:
+    displayName: OriginalIssueTypeMappings
+    type: object
+    properties:
+      IssueTypeId:
+        required: false
+        displayName: IssueTypeId
+        type: string
+  OutwardIssue:
+    displayName: OutwardIssue
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      self:
+        required: false
+        displayName: self
+        type: string
+      fields:
+        required: false
+        displayName: fields
+        type: Fields4
+  OutwardIssue2:
+    displayName: OutwardIssue2
+    type: object
+    properties:
+      key:
+        required: false
+        displayName: key
+        type: string
+  Owner:
+    displayName: Owner
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Permission2:
+    displayName: Permission2
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+  Permissions:
+    displayName: Permissions
+    type: object
+    properties:
+      EDIT_ISSUE:
+        required: false
+        displayName: EDIT_ISSUE
+        type: EDITISSUE
+  Priority:
+    displayName: Priority
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Project:
+    displayName: Project
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Project2:
+    displayName: Project2
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+  Project3:
+    displayName: Project3
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      issuetypes:
+        required: false
+        displayName: issuetypes
+        type: array
+        items:
+          type: Issuetype2
+  RealAssignee:
+    displayName: RealAssignee
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Restrict:
+    displayName: Restrict
+    type: object
+    properties:
+      groups:
+        required: false
+        displayName: groups
+        type: array
+        items:
+          type: Group2
+      permissions:
+        required: false
+        displayName: permissions
+        type: array
+        items:
+          type: Permission2
+  Roles:
+    displayName: Roles
+    type: object
+    properties:
+      Developers:
+        required: false
+        displayName: Developers
+        type: string
+  Schema:
+    displayName: Schema
+    type: object
+    properties:
+      type:
+        required: false
+        displayName: type
+        type: string
+      system:
+        required: false
+        displayName: system
+        type: string
+  Schema1:
+    displayName: Schema1
+    type: object
+    properties:
+      type:
+        required: false
+        displayName: type
+        type: string
+      items:
+        required: false
+        displayName: items
+        type: string
+      custom:
+        required: false
+        displayName: custom
+        type: string
+      customId:
+        required: false
+        displayName: customId
+        type: number
+        format: double
+  Security:
+    displayName: Security
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Session:
+    displayName: Session
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: string
+  Status:
+    displayName: Status
+    type: object
+    properties:
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+  Status2:
+    displayName: Status2
+    type: object
+    properties:
+      resolved:
+        required: false
+        displayName: resolved
+        type: boolean
+      icon:
+        required: false
+        displayName: icon
+        type: Icon1
+  Status8:
+    displayName: Status8
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      description:
+        required: false
+        displayName: description
+        type: string
+      iconUrl:
+        required: false
+        displayName: iconUrl
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      id:
+        required: false
+        displayName: id
+        type: string
+  Subscriptions:
+    displayName: Subscriptions
+    type: object
+    properties:
+      size:
+        required: false
+        displayName: size
+        type: number
+        format: double
+      items:
+        required: false
+        displayName: items
+        type: object
+      max-results:
+        required: false
+        displayName: max-results
+        type: number
+        format: double
+      start-index:
+        required: false
+        displayName: start-index
+        type: number
+        format: double
+      end-index:
+        required: false
+        displayName: end-index
+        type: number
+        format: double
+  SubTask:
+    displayName: SubTask
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      type:
+        required: false
+        displayName: type
+        type: Type
+      outwardIssue:
+        required: false
+        displayName: outwardIssue
+        type: OutwardIssue
+  Summary:
+    displayName: Summary
+    type: object
+    properties:
+      set:
+        required: false
+        displayName: set
+        type: string
+  Summary1:
+    displayName: Summary1
+    type: object
+    properties:
+      required:
+        required: false
+        displayName: required
+        type: boolean
+      schema:
+        required: false
+        displayName: schema
+        type: Schema1
+      name:
+        required: false
+        displayName: name
+        type: string
+      hasDefaultValue:
+        required: false
+        displayName: hasDefaultValue
+        type: boolean
+      operations:
+        required: false
+        displayName: operations
+        type: array
+        items:
+          type: string
+      allowedValues:
+        required: false
+        displayName: allowedValues
+        type: array
+        items:
+          type: string
+  Timetracking:
+    displayName: Timetracking
+    type: object
+    properties:
+      originalEstimate:
+        required: false
+        displayName: originalEstimate
+        type: string
+      remainingEstimate:
+        required: false
+        displayName: remainingEstimate
+        type: string
+  Timetracking2:
+    displayName: Timetracking2
+    type: object
+    properties:
+      edit:
+        required: false
+        displayName: edit
+        type: Edit
+  Timetracking3:
+    displayName: Timetracking3
+    type: object
+    properties:
+      originalEstimate:
+        required: false
+        displayName: originalEstimate
+        type: string
+      remainingEstimate:
+        required: false
+        displayName: remainingEstimate
+        type: string
+      timeSpent:
+        required: false
+        displayName: timeSpent
+        type: string
+      originalEstimateSeconds:
+        required: false
+        displayName: originalEstimateSeconds
+        type: number
+        format: double
+      remainingEstimateSeconds:
+        required: false
+        displayName: remainingEstimateSeconds
+        type: number
+        format: double
+      timeSpentSeconds:
+        required: false
+        displayName: timeSpentSeconds
+        type: number
+        format: double
+  To:
+    displayName: To
+    type: object
+    properties:
+      reporter:
+        required: false
+        displayName: reporter
+        type: boolean
+      assignee:
+        required: false
+        displayName: assignee
+        type: boolean
+      watchers:
+        required: false
+        displayName: watchers
+        type: boolean
+      voters:
+        required: false
+        displayName: voters
+        type: boolean
+      users:
+        required: false
+        displayName: users
+        type: array
+        items:
+          type: Users1
+      groups:
+        required: false
+        displayName: groups
+        type: array
+        items:
+          type: Group2
+  Transition:
+    displayName: Transition
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Transitions1:
+    displayName: Transitions1
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      to:
+        required: false
+        displayName: to
+        type: issueStatus
+      fields:
+        required: false
+        displayName: fields
+        type: Fields6
+  Type:
+    displayName: Type
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      inward:
+        required: false
+        displayName: inward
+        type: string
+      outward:
+        required: false
+        displayName: outward
+        type: string
+  Update:
+    displayName: Update
+    type: object
+    properties:
+      worklog:
+        required: false
+        displayName: worklog
+        type: array
+        items:
+          type: Worklog1
+  Update2:
+    displayName: Update2
+    type: object
+    properties:
+      summary:
+        required: false
+        displayName: summary
+        type: array
+        items:
+          type: Summary
+      timetracking:
+        required: false
+        displayName: timetracking
+        type: array
+        items:
+          type: Timetracking2
+      labels:
+        required: false
+        displayName: labels
+        type: array
+        items:
+          type: Label
+      components:
+        required: false
+        displayName: components
+        type: array
+        items:
+          type: Component2
+  Update3:
+    displayName: Update3
+    type: object
+    properties:
+      comment:
+        required: false
+        displayName: comment
+        type: array
+        items:
+          type: Comment3
+  UpdateAuthor:
+    displayName: UpdateAuthor
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Users:
+    displayName: Users
+    type: object
+    properties:
+      size:
+        required: false
+        displayName: size
+        type: number
+        format: double
+      items:
+        required: false
+        displayName: items
+        type: array
+        items:
+          type: Item
+      max-results:
+        required: false
+        displayName: max-results
+        type: number
+        format: double
+      start-index:
+        required: false
+        displayName: start-index
+        type: number
+        format: double
+      end-index:
+        required: false
+        displayName: end-index
+        type: number
+        format: double
+  Users1:
+    displayName: Users1
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Users3:
+    displayName: Users3
+    type: object
+    properties:
+      name:
+        required: false
+        displayName: name
+        type: string
+      key:
+        required: false
+        displayName: key
+        type: string
+      html:
+        required: false
+        displayName: html
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      avatarUrl:
+        required: false
+        displayName: avatarUrl
+        type: string
+  Version1:
+    displayName: Version1
+    type: object
+    properties:
+      id:
+        required: false
+        displayName: id
+        type: string
+  Visibility:
+    displayName: Visibility
+    type: object
+    properties:
+      type:
+        required: false
+        displayName: type
+        type: string
+      value:
+        required: false
+        displayName: value
+        type: string
+  VisibleFieldName:
+    displayName: VisibleFieldName
+    type: object
+    properties:
+      value:
+        required: false
+        displayName: value
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      auto:
+        required: false
+        displayName: auto
+        type: boolean
+      orderable:
+        required: false
+        displayName: orderable
+        type: boolean
+      searchable:
+        required: false
+        displayName: searchable
+        type: boolean
+      operators:
+        required: false
+        displayName: operators
+        type: array
+        items:
+          type: string
+      types:
+        required: false
+        displayName: types
+        type: array
+        items:
+          type: string
+  VisibleFunctionName:
+    displayName: VisibleFunctionName
+    type: object
+    properties:
+      value:
+        required: false
+        displayName: value
+        type: string
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      types:
+        required: false
+        displayName: types
+        type: array
+        items:
+          type: string
+  Voters1:
+    displayName: Voters1
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Watcher:
+    displayName: Watcher
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      isWatching:
+        required: false
+        displayName: isWatching
+        type: boolean
+      watchCount:
+        required: false
+        displayName: watchCount
+        type: number
+        format: double
+      watchers:
+        required: false
+        displayName: watchers
+        type: array
+        items:
+          type: Watcher1
+  Watcher1:
+    displayName: Watcher1
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Watchers1:
+    displayName: Watchers1
+    type: object
+    properties:
+      self:
+        required: false
+        displayName: self
+        type: string
+      name:
+        required: false
+        displayName: name
+        type: string
+      avatarUrls:
+        required: false
+        displayName: avatarUrls
+        type: AvatarUrls
+      displayName:
+        required: false
+        displayName: displayName
+        type: string
+      active:
+        required: false
+        displayName: active
+        type: boolean
+  Worklog1:
+    displayName: Worklog1
+    type: object
+    properties:
+      add:
+        required: false
+        displayName: add
+        type: Add
+/application-properties:
+  get:
+    displayName: ApplicationProperties_GET
+    description: Returns an application property.
+    securedBy:
+    - auth
+    queryParameters:
+      permissionLevel:
+        required: false
+        displayName: permissionLevel
+        description: when fetching a list specifies the permission level of all items in the list see {@link com.atlassian.jira.bc.admin.ApplicationPropertiesService.EditPermissionLevel}
+        type: string
+      keyFilter:
+        required: false
+        displayName: keyFilter
+        description: when fetching a list allows the list to be filtered by the property's start of key e.g. "jira.lf.*" whould fetch only those permissions that are editable and whose keys start with "jira.lf.". This is a regex.
+        type: string
+      key:
+        required: false
+        displayName: key
+        description: a String containing the property key
+        type: string
+    responses:
+      200:
+        description: Success
+        headers:
+          Content-Type:
+            default: application/json
+            displayName: Content-Type
+            type: string
+        body:
+          application/json:
+            example:
+              value:
+                id: jira.home
+                key: jira.home
+                value: /var/jira/jira-home
+                name: jira.home
+                desc: JIRA home directory
+                type: string
+                defaultValue: ''
+            displayName: response
+            type: appProperties
+      400:
+        description: Returned if the property does not exist or the currently authenticated user does not have permission to view it.
+        body: {}
+  /{id}:
+    uriParameters:
+      id:
+        required: true
+        displayName: id
+        type: string
+    put:
+      displayName: ApplicationPropertiesById_PUT
+      description: Modify an application property via PUT. The "value" field present in the PUT will override thee existing value.
+      body:
+        application/json:
+          displayName: body
+          type: appPropertyReq
+      securedBy:
+      - auth
+      responses:
+        200:
+          description: Returned if the version exists and the currently authenticated user has permission to edit it.
+        403:
+          description: Returned if the currently authenticated user does not have permission to edit the version.
+          body: {}
+        404:
+          description: Returned if the version does not exist or the currently authenticated user does not have permission to view it.
+          body: {}
+/auditing/settings:
+  get:
+    displayName: AuditingSettings_GET
+    description: Returns current Auditing settings.
+    securedBy:
+    - auth
+    responses:
+      200:
+        description: Success
+        headers:
+          Content-Type:
+            default: application/json
+            displayName: Content-Type
+            type: string
+        body:
+          application/json:
+            example:
+              value:
+                enabled: true
+            displayName: response
+            type: settings
+  put:
+    displayName: AuditingSettings_PUT
+    description: Changed current Auditing settings Returns REST representation for the requested group.
+    securedBy:
+    - auth
+    responses:
+      200:
+        description: Returned if the object was retrieved successful.
+        headers:
+          Content-Type:
+            default: application/json
+            displayName: Content-Type
+            type: string
+        body:
+          application/json:
+            example:
+              value:
+                enabled: true
+            displayName: response
+            description: Returned if the object was retrieved successful.
+            type: settings
+      401:
+        description: Returned if the current user is not a sysadmin.
+        body: {}
+/attachment:
+  /{id}:
+    uriParameters:
+      id:
+        required: true
+        displayName: id
+        description: The id of the attachment to delete.
+        type: string
+    get:
+      displayName: AttachmentById_GET
+      description: Returns the meta-data for an attachment, including the URI of the actual attached file.
+      securedBy:
+      - auth
+      responses:
+        200:
+          description: Success
+          headers:
+            Content-Type:
+              default: application/json
+              displayName: Content-Type
+              type: string
+          body:
+            application/json:
+              example:
+                value:
+                  self: http://www.example.com/jira/rest/api/2.0/attachments/10000
+                  filename: picture.jpg
+                  author:
+                    self: http://www.example.com/jira/rest/api/2/user?username=fred
+                    name: fred
+                    avatarUrls:
+                      24x24: http://www.example.com/jira/secure/useravatar?size=small&ownerId=fred
+                      16x16: http://www.example.com/jira/secure/useravatar?size=xsmall&ownerId=fred
+                      32x32: http://www.example.com/jira/secure/useravatar?size=medium&ownerId=fred
+                      48x48: http://www.example.com/jira/secure/useravatar?size=large&ownerId=fred
+                    displayName: Fred F. User
+                    active: false
+                  created: 2014-05-27T08:32:06.0000000Z
+                  size: 23123
+                  mimeType: image/jpeg
+                  content: http://www.example.com/jira/attachments/10000
+                  thumbnail: http://www.example.com/jira/secure/thumbnail/10000
+              displayName: response
+              type: attachment
+        404:
+          description: Returned if the attachment with the given id does not exist, or is not accessible by the calling user.
+          body: {}
+    delete:
+      displayName: AttachmentById_DELETE
+      description: Remove an attachment from an issue.
+      securedBy:
+      - auth
+      responses:
+        204:
+          description: Returned if successful.
+        403:
+          description: Returned if attachments is disabled or if you don't have permission to remove attachments from this issue.
+          body: {}
+        404:
+          description: Returned if the attachment is not found
+          body: {}
+  /meta:
+    get:
+      displayName: AttachmentMeta_GET
+      description: Returns the meta informations for an attachments, specifically if they are enabled and the maximum upload size allowed.
+      securedBy:
+      - auth
+      responses:
+        200:
+          description: Success
+          headers:
+            Content-Type:
+              default: application/json
+              displayName: Content-Type
+              type: string
+          body:
+            application/json:
+              example:
+                value:
+                  enabled: true
+                  uploadLimit: 1000000
+              displayName: response
+              type: attachmentMeta
+/avatar/{type}:
+  uriParameters:
+    type:
+      required: true
+      displayName: type
+      description: the avatar type
+      type: string
+  /temporaryCrop:
+    post:
+      displayName: AvatarTemporaryCropByType_POST
+      description: Updates the cropping instructions of the temporary avatar.
+      body:
+        application/json:
+          displayName: body
+          type: cropInstructions
+      securedBy:
+      - auth
+      responses:
+        201:
+          description: Returned if the object was created successful.
+        400:
+          description: Returned if the cropping coordinates are invalid
+          body: {}
+        500:
+          description: Returned if an error occurs while cropping the temporary avatar
+          body: {}
+  /temporary:
+    post:
+      displayName: AvatarTemporaryByType_POST
+      description: Creates temporary avatar
+      securedBy:
+      - auth
+      queryParameters:
+        filename:
+          required: false
+          displayName: filename
+          description: name of file being uploaded
+          type: string
+        size:
+          required: false
+          displayName: size
+          description: size of file
+          type: integer
+          format: int32
+      responses:
+        201:
+          description: Returned if the object was created successful.
+          headers:
+            Content-Type:
+              default: application/json
+              displayName: Content-Type
+              type: string
+          body:
+            application/json:
+              example:
+                value:
+                  cropperWidth: 120
+                  cropperOffsetX: 50
+                  cropperOffsetY: 50
+                  url: http://example.com/jira/secure/temporaryavatar?cropped=true
+                  needsCropping: true
+              displayName: response
+              description: Returned if the object was created successful.
+              type: temporaryAvatar
+        400:
+          description: Valiation failed. For example filesize is beyond max attachment size.
+          body: {}
+        403:
+          description: Returned if the request does not conain a valid XSRF token
+          body: {}
+        500:
+          description: Returned if an error occurs while converting temporary avatar to real avatar
+          body: {}
+  /system:
+    get:
+      displayName: AvatarSystemByType_GET
+      description: Returns all system avatars of the given type.
+      securedBy:
+      - auth
+      responses:
+        200:
+          description: Success
+          headers:
+            Content-Type:
+              default: application/json
+              displayName: Content-Type
+              type: string
+          body:
+            application/json:
+              example:
+                value:
+                  system:
+                  - id: 1000
+                    owner: fred
+                    isSystemAvatar: true
+                    isSelected: true
+                    selected: true
+              displayName: response
+              type: systemAvatar
+        500:
+          description: Returned if an error occurs while retrieving the list of avatars.
+          body: {}
